@@ -1,0 +1,331 @@
+#!/bin/bash
+#
+# Android Portable Build Script (apbs)
+# Isaac Pateau (Zaclimon)
+#
+# Introduction:
+#
+# As I was starting to use the Fish Shell, I've seen that it couldn't be used
+# with pure POSIX based scripts or even those hardcoded for bash. One of those
+# scripts is the Android environment setup script (envsetup.sh)
+# 
+# The main purpose of this script will be to accomodate those
+# who use the Fish Shell (or any not compatible shell for that matter) to at least 
+# build an Android ROM.
+#
+# By default, the number of threads used are the total available on the computer. 
+# That said, the user can modify as he/she wishes by modyfing the "NB_CORES" attribute.
+#
+#
+# Syntax:
+#
+# apbs COMMAND SOURCE TARGET
+#
+# COMMAND: The command as used in the source's envsetup.sh
+#
+# SOURCE: Location of the Android source tree.  
+#
+# TARGET: Optional, it is mainly used for specyfing when building for a device
+# for example.
+# 
+
+COMMAND=$1
+SOURCE=$2
+TARGET=$3
+NB_CORES=`cat /proc/cpuinfo | grep -c "processor"`
+VERSION="1.0"
+
+# Execute the command based on the user input
+function main()
+{
+    case $COMMAND in
+        -b|--build)
+            check_source_path
+            build_device
+            ;;
+        -br|--brecovery)
+            check_source_path
+            build_recovery
+            ;;
+        -cg|-gg|-jg|-mg|-rc|-rg|-se|-sg)
+            check_source_path
+            execute_grep
+            ;;
+        --cgrep|--ggrep|--jgrep|--mangrep|--rcgrep|--resgrep|--sepgrep|--sgrep)
+            check_source_path
+            execute_grep
+            ;;
+        -e|--examples)
+            show_examples
+            ;;
+        -h|--help)
+            show_help_message
+            ;;
+        -i|--info)
+            check_source_path
+            show_source_info
+            ;;
+        -l|--list)
+            check_source_path
+            list_devices
+            ;;
+        --mmm)
+            check_source_path
+            build_mmm
+            ;;
+        --mmma)
+            check_source_path
+            build_mmma
+            ;;
+        -s|--search)
+            check_source_path
+            search_devices $TARGET
+            ;;
+        -v|--version)
+            show_version
+            ;;
+        *)
+            echo "Invalid command '$COMMAND'"
+            echo ""
+            show_help_message
+    esac
+    exit 0
+}
+
+# Build if we can find the device in the list that we have currently available
+function build_device()
+{
+    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+        if [[ $CHOICE == *"$TARGET"* ]] ; then
+            VALID_DEVICE=$CHOICE
+            check_device
+        fi
+    done
+    lunch $VALID_DEVICE
+    make -j$NB_CORES otapackage
+}
+
+# Build all the required modules of a project without it's prerequisites
+function build_mmm()
+{
+    PROJECT=${TARGET//_/\/}
+    if [ -d $PROJECT ] ; then
+        mmm $PROJECT
+    else
+        echo "Project $PROJECT not found"
+        exit 1
+    fi
+}
+
+# Build all the required modules of a project with it's prerequisites
+function build_mmma()
+{
+    PROJECT=${TARGET//_/\/}
+    if [ -d $PROJECT ] ; then
+        mmma $PROJECT
+    else
+        echo "Project $PROJECT not found"
+        exit 1
+    fi
+}
+
+# Call the necessary functions to build the device's recovery image
+function build_recovery()
+{
+    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+        if [[ $CHOICE == *"$TARGET"* ]] ; then
+            VALID_DEVICE=$CHOICE
+            check_device
+        fi
+    done
+    lunch $VALID_DEVICE
+    make -j$NB_CORES recoveryimage
+}
+
+# Check for the device existence or possible duplicates
+function check_device()
+{
+    DEVICE_COUNT=0
+    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+        if [[ $CHOICE == *"$TARGET"* ]] ; then
+            ((DEVICE_COUNT++))
+        fi
+    done
+
+    if [ $DEVICE_COUNT -eq 0 ] ; then
+        echo "The device $TARGET doesn't exist"
+        exit 1
+    elif [ $DEVICE_COUNT -gt 1 ] ; then
+        echo "There are $DEVICE_COUNT '$TARGET' in the source tree:"
+        echo ""
+        search $TARGET
+        exit 1
+    fi
+}
+
+# Check the path entered by the user there. 
+# If the path isn't an absolute one, check in the user's home folder
+function check_source_path()
+{
+    if [[ -d $SOURCE && -f $SOURCE/build/envsetup.sh ]] ; then
+        cd $SOURCE
+        . build/envsetup.sh > /dev/null
+    elif [[ -d $HOME/$SOURCE && -f $HOME/$SOURCE/build/envsetup.sh ]] ; then
+        cd $HOME/$SOURCE
+        . build/envsetup.sh > /dev/null
+    else
+        if [ -z $SOURCE ] ; then
+            echo "No source has been given"
+        else
+            echo "The given source $SOURCE isn't a valid Android one"
+        fi
+        exit 1
+    fi
+}
+
+# Check if the command can be executed based on the version of the actual source
+function check_version_sdk()
+{
+    SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+    if [[ ! $SDK_VERSION -ge $1 ]] ; then
+        echo "Android version not compatible with this command"
+        exit 1
+    fi
+}
+
+# Host here the various "grep" commands (if used)
+function execute_grep()
+{
+    ORIGINAL_COMMAND=${COMMAND//-/}
+    case $ORIGINAL_COMMAND in
+        cg|cgrep)
+            cgrep $TARGET
+            ;;
+        gg|ggrep)
+            check_version_sdk 21
+            ggrep $TARGET
+            ;;
+        jg|jgrep)
+            jgrep $TARGET
+            ;;
+        mg|mangrep)
+            check_version_sdk 18
+            mangrep $TARGET
+            ;;
+        mg|mgrep)
+            mgrep $TARGET
+            ;;
+        rc|rcgrep)
+            check_version_sdk 23
+            rcgrep $TARGET
+            ;;
+        rg|resgrep)
+            resgrep $TARGET
+            ;;
+        se|sepgrep)
+            check_version_sdk 19
+            sepgrep $TARGET
+            ;;
+        sg|sgrep)
+            sgrep $TARGET
+    esac
+}
+
+# List board devices as invoked when executing envsetup.sh
+function list_devices()
+{
+    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+         echo "$CHOICE"
+    done
+}
+
+# Search for the different devices here.
+# Duplicates can possibly be listed as well
+function search_devices()
+{
+    if [[ ! -z $1 ]] ; then
+        for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+            if [[ $CHOICE == *"$1"* ]] ; then
+               echo "$CHOICE"
+            fi
+        done
+    else
+        echo "No device specified"
+        exit 1
+    fi
+}
+
+# In case people don't understand how to use this script, show examples
+function show_examples()
+{
+    echo "  Here are some examples on how to use this script:"
+    echo ""
+    echo "  Example 1: How to build a ROM for a device"
+    echo "  abps [ -b | --build ] source_path device_name"
+    echo ""
+    echo "  Example 2: Search for device name (If we don't know it)"
+    echo "  abps [ -s | --search ] source_path"
+    echo ""
+    echo "  Example 3: Search a specific word in the source"
+    echo "  abps [ -sg | --sgrep ] source_path"
+}
+
+# Self-explanatory... But shows the help message
+function show_help_message()
+{
+    echo "Usage: $0 COMMAND SOURCE TARGET"
+    echo "       $0 COMMAND SOURCE"
+    echo "       $0 [ -h | --help | -v | --version ]"
+    echo ""
+    echo "A portable script to build the Android source on-the go"
+    echo ""
+    echo "Description"
+    echo ""
+    echo "COMMAND: One of this script's commands. They are defined below"
+    echo "SOURCE: Directory of the related Android OS source"
+    echo "TARGET: Points toward what this script will build"
+    echo ""
+    echo "Commands:"
+    echo ""
+    echo "  -b,  --build      Builds the operating system based on the source and device given"
+    echo "  -br, --brecovery  Builds the recovery image based on the source and device given"
+    echo "  -cg, --cgrep      Greps on all local C/C++ files."
+    echo "  -gg, --ggrep      Greps on all local Gradle files."
+    echo "  -h,  --help       Displays this help message"
+    echo "  -i,  --info       Displays some information about the Android source"
+    echo "  -jg, --jgrep      Greps on all local Java files."
+    echo "  -l,  --list       Lists the devices that the source can build"
+    echo "  -mg, --mangrep    Greps on all local AndroidManifest.xml files"
+    echo "  -m1, --mmm        Builds all of the modules in the supplied directory, but not their dependencies"
+    echo "  -m2, --mmma       Builds all of the modules in the supplied directory, and their dependencies"
+    echo "  -rc, --rcgrep     Greps on all local *.rc files."
+    echo "  -rg, --resgrep    Greps on all local res/*.xml files."
+    echo "  -s,  --search     Searches for a specific device in the source"
+    echo "  -se, --sepgrep    Greps on all local sepolicy files."
+    echo "  -sg, --sgrep      Greps on all local source files."
+    echo "  -v,  --version    Displays the version of the script"
+}
+
+# Displays the source basic information (such as version, full path)
+function show_source_info()
+{
+    ANDROID_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+    ANDROID_SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+    ANDROID_VERSION_BUILD_ID=`cat build/core/build_id.mk | grep "BUILD_ID=" | cut -d = -f2`
+
+    echo "Source information:"
+    echo ""
+    echo "Android Version: $ANDROID_VERSION"
+    echo "Android SDK Version: $ANDROID_SDK_VERSION"
+    echo "Android Build ID: $ANDROID_VERSION_BUILD_ID"
+    echo "Android Source Full Path: `gettop`"
+}
+
+# Show the version as defined by "$VERSION"
+function show_version()
+{
+    echo "Android Portable Build Script (apbs) version $VERSION"
+}
+
+# Call the main function on the command received
+main
