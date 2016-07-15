@@ -273,9 +273,9 @@ function show_examples()
 # Self-explanatory... But shows the help message
 function show_help_message()
 {
-    echo "Usage: $0 COMMAND SOURCE TARGET"
-    echo "       $0 COMMAND SOURCE"
-    echo "       $0 [ -h | --help | -v | --version ]"
+    echo "Usage: apbs COMMAND SOURCE TARGET"
+    echo "       apbs COMMAND SOURCE"
+    echo "       apbs [ -h | --help | -v | --version ]"
     echo ""
     echo "A portable script to build the Android source on-the go"
     echo ""
