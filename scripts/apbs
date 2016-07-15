@@ -69,11 +69,11 @@ function main()
             check_source_path
             list_devices
             ;;
-        --mmm)
+        -m1|--mmm)
             check_source_path
             build_mmm
             ;;
-        --mmma)
+        -m2|--mmma)
             check_source_path
             build_mmma
             ;;
