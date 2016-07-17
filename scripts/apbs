@@ -97,12 +97,7 @@ function main()
 # Build if we can find the device in the list that we have currently available
 function build_device()
 {
-    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
-        if [[ $CHOICE == *"$TARGET"* ]] ; then
-            VALID_DEVICE=$CHOICE
-            check_device
-        fi
-    done
+    check_device
     lunch $VALID_DEVICE
     make -j$NB_CORES otapackage
 }
@@ -134,12 +129,7 @@ function build_mmma()
 # Call the necessary functions to build the device's recovery image
 function build_recovery()
 {
-    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
-        if [[ $CHOICE == *"$TARGET"* ]] ; then
-            VALID_DEVICE=$CHOICE
-            check_device
-        fi
-    done
+    check_device
     lunch $VALID_DEVICE
     make -j$NB_CORES recoveryimage
 }
@@ -148,24 +138,27 @@ function build_recovery()
 function check_device()
 {
     DEVICE_COUNT=0
+
     for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
         if [[ $CHOICE == *"$TARGET"* ]] ; then
+            VALID_DEVICE=$CHOICE
             ((DEVICE_COUNT++))
         fi
     done
 
     if [ $DEVICE_COUNT -eq 0 ] ; then
         echo "The device $TARGET doesn't exist"
-        exit 1
+        exit 1
     elif [[ $DEVICE_COUNT -gt 1 && ! -z $TARGET ]] ; then
         echo "There are $DEVICE_COUNT '$TARGET' in the source tree:"
         echo ""
         search_devices $TARGET
         exit 1
-    else
+    elif [ -z $TARGET ] ; then
         echo "No device specified"
         exit 1
     fi
+
 }
 
 # Check the path entered by the user there (root 
