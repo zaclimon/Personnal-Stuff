@@ -20,6 +20,7 @@
 # Syntax:
 #
 # apbs COMMAND SOURCE TARGET
+# apbs COMMAND TARGET
 #
 # COMMAND: The command as used in the source's envsetup.sh
 #
@@ -84,10 +85,11 @@ function main()
         -v|--version)
             show_version
             ;;
+        "")
+            show_intro_message
+            ;;
         *)
-            echo "Invalid command '$COMMAND'"
-            echo ""
-            show_help_message
+            echo "apbs: Invalid command '$COMMAND'"
     esac
     exit 0
 }
@@ -155,19 +157,26 @@ function check_device()
     if [ $DEVICE_COUNT -eq 0 ] ; then
         echo "The device $TARGET doesn't exist"
         exit 1
-    elif [ $DEVICE_COUNT -gt 1 ] ; then
+    elif [[ $DEVICE_COUNT -gt 1 && ! -z $TARGET ]] ; then
         echo "There are $DEVICE_COUNT '$TARGET' in the source tree:"
         echo ""
-        search $TARGET
+        search_devices $TARGET
+        exit 1
+    else
+        echo "No device specified"
         exit 1
     fi
 }
 
-# Check the path entered by the user there. 
+# Check the path entered by the user there (root 
+# Pass if the current working directory is a valid source root
 # If the path isn't an absolute one, check in the user's home folder
 function check_source_path()
 {
-    if [[ -d $SOURCE && -f $SOURCE/build/envsetup.sh ]] ; then
+    if [ -f $PWD/build/envsetup.sh ] ; then
+        . build/envsetup.sh > /dev/null
+        TARGET=$SOURCE
+    elif [[ -d $SOURCE && -f $SOURCE/build/envsetup.sh ]] ; then
         cd $SOURCE
         . build/envsetup.sh > /dev/null
     elif [[ -d $HOME/$SOURCE && -f $HOME/$SOURCE/build/envsetup.sh ]] ; then
@@ -177,7 +186,7 @@ function check_source_path()
         if [ -z $SOURCE ] ; then
             echo "No source has been given"
         else
-            echo "The given source $SOURCE isn't a valid Android one"
+            echo "The given source '$SOURCE' isn't a valid Android one"
         fi
         exit 1
     fi
@@ -258,16 +267,22 @@ function search_devices()
 # In case people don't understand how to use this script, show examples
 function show_examples()
 {
-    echo "  Here are some examples on how to use this script:"
+    echo "Here are some examples on how to use this script:"
     echo ""
     echo "  Example 1: How to build a ROM for a device"
     echo "  abps [ -b | --build ] source_path device_name"
     echo ""
-    echo "  Example 2: Search for device name (If we don't know it)"
-    echo "  abps [ -s | --search ] source_path"
+    echo "  Example 2: List the devices for a given source"
+    echo "  abps [ -l | --list ] source_path"
     echo ""
-    echo "  Example 3: Search a specific word in the source"
+    echo "  Example 3: Search for device name (If we don't know it)"
+    echo "  abps [ -s | --search ] source_path device_name"
+    echo ""
+    echo "  Example 4: Search a specific word in the source"
     echo "  abps [ -sg | --sgrep ] source_path"
+    echo ""
+    echo "  Example 5: Using without specifying the source"
+    echo "  abps COMMAND [ device_name ]"
 }
 
 # Self-explanatory... But shows the help message
@@ -275,9 +290,11 @@ function show_help_message()
 {
     echo "Usage: apbs COMMAND SOURCE TARGET"
     echo "       apbs COMMAND SOURCE"
+    echo "       apbs COMMAND TARGET"
+    echo "       abps COMMAND"
     echo "       apbs [ -h | --help | -v | --version ]"
     echo ""
-    echo "A portable script to build the Android source on-the go"
+    echo "A portable script to build Android on-the-go"
     echo ""
     echo "Description"
     echo ""
@@ -285,10 +302,15 @@ function show_help_message()
     echo "SOURCE: Directory of the related Android OS source"
     echo "TARGET: Points toward what this script will build"
     echo ""
+    echo "Note: Specifying the source is not necessary if the current directory is a"
+    echo "      valid one"
+    echo ""
     echo "Commands:"
     echo ""
-    echo "  -b,  --build      Builds the operating system based on the source and device given"
-    echo "  -br, --brecovery  Builds the recovery image based on the source and device given"
+    echo "  -b,  --build      Builds the operating system based on the source and device"
+    echo "                    given"
+    echo "  -br, --brecovery  Builds the recovery image based on the source and device" 
+    echo "                    given"
     echo "  -cg, --cgrep      Greps on all local C/C++ files."
     echo "  -gg, --ggrep      Greps on all local Gradle files."
     echo "  -h,  --help       Displays this help message"
@@ -296,14 +318,22 @@ function show_help_message()
     echo "  -jg, --jgrep      Greps on all local Java files."
     echo "  -l,  --list       Lists the devices that the source can build"
     echo "  -mg, --mangrep    Greps on all local AndroidManifest.xml files"
-    echo "  -m1, --mmm        Builds all of the modules in the supplied directory, but not their dependencies"
-    echo "  -m2, --mmma       Builds all of the modules in the supplied directory, and their dependencies"
-    echo "  -rc, --rcgrep     Greps on all local *.rc files."
-    echo "  -rg, --resgrep    Greps on all local res/*.xml files."
+    echo "  -m1, --mmm        Builds all of the modules in the supplied directory" 
+    echo "                    without their dependencies"
+    echo "  -m2, --mmma       Builds all of the modules in the supplied directory"
+    echo "                    with their dependencies"
+    echo "  -rc, --rcgrep     Greps on all local *.rc files"
+    echo "  -rg, --resgrep    Greps on all local res/*.xml files"
     echo "  -s,  --search     Searches for a specific device in the source"
-    echo "  -se, --sepgrep    Greps on all local sepolicy files."
-    echo "  -sg, --sgrep      Greps on all local source files."
+    echo "  -se, --sepgrep    Greps on all local sepolicy files"
+    echo "  -sg, --sgrep      Greps on all local source files"
     echo "  -v,  --version    Displays the version of the script"
+}
+
+function show_intro_message()
+{
+    echo "apbs: A portable script to build Android on-the-go"
+    echo "Execute 'apbs -h' or 'apbs --help' for more information"
 }
 
 # Displays the source basic information (such as version, full path)
