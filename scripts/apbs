@@ -105,7 +105,7 @@ function build_device()
 # Build all the required modules of a project without it's prerequisites
 function build_mmm()
 {
-    PROJECT=${TARGET//_/\/}
+    local PROJECT=${TARGET//_/\/}
     if [ -d $PROJECT ] ; then
         mmm $PROJECT
     else
@@ -117,7 +117,7 @@ function build_mmm()
 # Build all the required modules of a project with it's prerequisites
 function build_mmma()
 {
-    PROJECT=${TARGET//_/\/}
+    local PROJECT=${TARGET//_/\/}
     if [ -d $PROJECT ] ; then
         mmma $PROJECT
     else
@@ -137,7 +137,7 @@ function build_recovery()
 # Check for the device existence or possible duplicates
 function check_device()
 {
-    DEVICE_COUNT=0
+    local DEVICE_COUNT=0
 
     for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
         if [[ $CHOICE == *"$TARGET"* ]] ; then
@@ -188,7 +188,8 @@ function check_source_path()
 # Check if the command can be executed based on the version of the actual source
 function check_version_sdk()
 {
-    SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+    local SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+
     if [[ ! $SDK_VERSION -ge $1 ]] ; then
         echo "Android version not compatible with this command"
         exit 1
@@ -198,7 +199,8 @@ function check_version_sdk()
 # Host here the various "grep" commands (if used)
 function execute_grep()
 {
-    ORIGINAL_COMMAND=${COMMAND//-/}
+    local ORIGINAL_COMMAND=${COMMAND//-/}
+
     case $ORIGINAL_COMMAND in
         cg|cgrep)
             cgrep $TARGET
@@ -332,9 +334,9 @@ function show_intro_message()
 # Displays the source basic information (such as version, full path)
 function show_source_info()
 {
-    ANDROID_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
-    ANDROID_SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
-    ANDROID_VERSION_BUILD_ID=`cat build/core/build_id.mk | grep "BUILD_ID=" | cut -d = -f2`
+    local ANDROID_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+    local ANDROID_SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+    local ANDROID_VERSION_BUILD_ID=`cat build/core/build_id.mk | grep "BUILD_ID=" | cut -d = -f2`
 
     echo "Source information:"
     echo ""
