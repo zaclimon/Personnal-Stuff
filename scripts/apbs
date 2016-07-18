@@ -34,7 +34,7 @@ COMMAND=$1
 SOURCE=$2
 TARGET=$3
 NB_CORES=`cat /proc/cpuinfo | grep -c "processor"`
-VERSION="1.0"
+VERSION="1.1"
 
 # Execute the command based on the user input
 function main()
