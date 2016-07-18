@@ -154,7 +154,7 @@ function check_device()
         echo ""
         search_devices $TARGET
         exit 1
-    elif [ -z $TARGET ] ; then
+    else
         echo "No device specified"
         exit 1
     fi
