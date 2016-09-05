@@ -33,6 +33,7 @@
 COMMAND=$1
 SOURCE=$2
 TARGET=$3
+TEMP_DEVICE_FILE=$PWD/.apbs_temp_file
 NB_CORES=`cat /proc/cpuinfo | grep -c "processor"`
 VERSION="1.1"
 
@@ -137,28 +138,31 @@ function build_recovery()
 # Check for the device existence or possible duplicates
 function check_device()
 {
-    local DEVICE_COUNT=0
+    if [ -f $TEMP_DEVICE_FILE ] ; then
+        VALID_DEVICE=`cat $TEMP_DEVICE_FILE`
+        rm -f $TEMP_DEVICE_FILE
+    else
+        local DEVICE_COUNT=0
 
-    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
-        if [[ $CHOICE == *"$TARGET"* ]] ; then
-            VALID_DEVICE=$CHOICE
-            ((DEVICE_COUNT++))
+        for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+            if [[ $CHOICE == *"$TARGET"* ]] ; then
+                VALID_DEVICE=$CHOICE
+                ((DEVICE_COUNT++))
+            fi
+        done
+
+        if [ $DEVICE_COUNT -eq 0 ] ; then
+            echo "The device $TARGET doesn't exist"
+            exit 1
+        elif [[ $DEVICE_COUNT -gt 1 && ! -z $TARGET ]] ; then
+            echo "There are $DEVICE_COUNT '$TARGET' defined in the source:"
+            echo ""
+            select_duplicate_device $TARGET
+        elif [ -z $TARGET ] ; then
+            echo "No device specified"
+            exit 1
         fi
-    done
-
-    if [ $DEVICE_COUNT -eq 0 ] ; then
-        echo "The device $TARGET doesn't exist"
-        exit 1
-    elif [[ $DEVICE_COUNT -gt 1 && ! -z $TARGET ]] ; then
-        echo "There are $DEVICE_COUNT '$TARGET' in the source tree:"
-        echo ""
-        search_devices $TARGET
-        exit 1
-    elif [ -z $TARGET ] ; then
-        echo "No device specified"
-        exit 1
     fi
-
 }
 
 # Check the path entered by the user there (root 
@@ -257,6 +261,32 @@ function search_devices()
         echo "No device specified"
         exit 1
     fi
+}
+
+# Let the user choose which device he/she wants to take. Write the value in a file
+# because Bash child shells cannot overwrite parent variables.
+function select_duplicate_device()
+{
+    PS3="Select your device: "
+    local DEVICE_ARRAY=()
+
+    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+        if [[ $CHOICE == *"$1"* ]] ; then
+           DEVICE_ARRAY+=("$CHOICE")
+        fi
+    done
+
+    select DEVICE in ${DEVICE_ARRAY[@]} ; do
+        if [[ $REPLY -ge 1 && $REPLY -le ${#DEVICE_ARRAY[@]} ]] ; then
+            local DEVICE_INDEX=$REPLY-1
+            TARGET=${DEVICE_ARRAY[DEVICE_INDEX]}
+            echo $TARGET > $TEMP_DEVICE_FILE
+            build_device
+        else
+            echo "Value not valid"
+            exit 1
+        fi
+    done 
 }
 
 # In case people don't understand how to use this script, show examples
