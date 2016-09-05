@@ -165,9 +165,10 @@ function check_device()
     fi
 }
 
-# Check the path entered by the user there (root 
-# Pass if the current working directory is a valid source root
-# If the path isn't an absolute one, check in the user's home folder
+# Check the path from multiple situations:
+# 1. If the current directory is a source directory
+# 2. If the absolute supplied path is a valid source
+# 3. If the supplied path isn't an absolute one, check in the user's home folder
 function check_source_path()
 {
     if [ -f $PWD/build/envsetup.sh ] ; then
