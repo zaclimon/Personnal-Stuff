@@ -33,7 +33,7 @@
 COMMAND=$1
 SOURCE=$2
 TARGET=$3
-TEMP_DEVICE_FILE=$PWD/.apbs_temp_file
+TEMP_DEVICE_FILE=$HOME/.apbs_temp_file
 NB_CORES=`cat /proc/cpuinfo | grep -c "processor"`
 VERSION="1.1"
 
