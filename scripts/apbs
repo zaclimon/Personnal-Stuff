@@ -280,9 +280,10 @@ function select_duplicate_device()
     select DEVICE in ${DEVICE_ARRAY[@]} ; do
         if [[ $REPLY -ge 1 && $REPLY -le ${#DEVICE_ARRAY[@]} ]] ; then
             local DEVICE_INDEX=$REPLY-1
-            TARGET=${DEVICE_ARRAY[DEVICE_INDEX]}
+            TARGET=${DEVICE_ARRAY[$DEVICE_INDEX]}
             echo $TARGET > $TEMP_DEVICE_FILE
             build_device
+            exit 0
         else
             echo "Value not valid"
             exit 1
