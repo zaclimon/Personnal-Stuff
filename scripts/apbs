@@ -35,7 +35,7 @@ SOURCE=$2
 TARGET=$3
 TEMP_DEVICE_FILE=$HOME/.apbs_temp_file
 NB_CORES=$(grep -c "processor" /proc/cpuinfo)
-VERSION="1.1"
+VERSION="1.2"
 
 # Execute the command based on the user input
 function main()
