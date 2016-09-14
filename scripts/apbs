@@ -34,7 +34,7 @@ COMMAND=$1
 SOURCE=$2
 TARGET=$3
 TEMP_DEVICE_FILE=$HOME/.apbs_temp_file
-NB_CORES=`cat /proc/cpuinfo | grep -c "processor"`
+NB_CORES=$(grep -c "processor" /proc/cpuinfo)
 VERSION="1.1"
 
 # Execute the command based on the user input
@@ -81,7 +81,7 @@ function main()
             ;;
         -s|--search)
             check_source_path
-            search_devices $TARGET
+            search_devices "$TARGET"
             ;;
         -v|--version)
             show_version
@@ -99,16 +99,16 @@ function main()
 function build_device()
 {
     check_device
-    lunch $VALID_DEVICE
-    make -j$NB_CORES otapackage
+    lunch "$VALID_DEVICE"
+    make -j"$NB_CORES" otapackage
 }
 
 # Build all the required modules of a project without it's prerequisites
 function build_mmm()
 {
     local PROJECT=${TARGET//_/\/}
-    if [ -d $PROJECT ] ; then
-        mmm $PROJECT
+    if [ -d "$PROJECT" ] ; then
+        mmm "$PROJECT"
     else
         echo "Project $PROJECT not found"
         exit 1
@@ -119,8 +119,8 @@ function build_mmm()
 function build_mmma()
 {
     local PROJECT=${TARGET//_/\/}
-    if [ -d $PROJECT ] ; then
-        mmma $PROJECT
+    if [ -d "$PROJECT" ] ; then
+        mmma "$PROJECT"
     else
         echo "Project $PROJECT not found"
         exit 1
@@ -131,20 +131,20 @@ function build_mmma()
 function build_recovery()
 {
     check_device
-    lunch $VALID_DEVICE
-    make -j$NB_CORES recoveryimage
+    lunch "$VALID_DEVICE"
+    make -j"$NB_CORES" recoveryimage
 }
 
 # Check for the device existence or possible duplicates
 function check_device()
 {
-    if [ -f $TEMP_DEVICE_FILE ] ; then
-        VALID_DEVICE=`cat $TEMP_DEVICE_FILE`
-        rm -f $TEMP_DEVICE_FILE
+    if [ -f "$TEMP_DEVICE_FILE" ] ; then
+        VALID_DEVICE=$(cat "$TEMP_DEVICE_FILE")
+        rm -f "$TEMP_DEVICE_FILE"
     else
         local DEVICE_COUNT=0
 
-        for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+        for CHOICE in "${LUNCH_MENU_CHOICES[@]}" ; do
             if [[ $CHOICE == *"$TARGET"* ]] ; then
                 VALID_DEVICE=$CHOICE
                 ((DEVICE_COUNT++))
@@ -157,8 +157,8 @@ function check_device()
         elif [[ $DEVICE_COUNT -gt 1 && ! -z $TARGET ]] ; then
             echo "There are $DEVICE_COUNT '$TARGET' defined in the source:"
             echo ""
-            select_duplicate_device $TARGET
-        elif [ -z $TARGET ] ; then
+            select_duplicate_device "$TARGET"
+        elif [ -z "$TARGET" ] ; then
             echo "No device specified"
             exit 1
         fi
@@ -171,17 +171,17 @@ function check_device()
 # 3. If the supplied path isn't an absolute one, check in the user's home folder
 function check_source_path()
 {
-    if [ -f $PWD/build/envsetup.sh ] ; then
+    if [ -f "$PWD/build/envsetup.sh" ] ; then
         . build/envsetup.sh > /dev/null
         TARGET=$SOURCE
     elif [[ -d $SOURCE && -f $SOURCE/build/envsetup.sh ]] ; then
-        cd $SOURCE
+        cd "$SOURCE"
         . build/envsetup.sh > /dev/null
     elif [[ -d $HOME/$SOURCE && -f $HOME/$SOURCE/build/envsetup.sh ]] ; then
-        cd $HOME/$SOURCE
+        cd "$HOME/$SOURCE"
         . build/envsetup.sh > /dev/null
     else
-        if [ -z $SOURCE ] ; then
+        if [ -z "$SOURCE" ] ; then
             echo "No source has been given"
         else
             echo "The given source '$SOURCE' isn't a valid Android one"
@@ -193,7 +193,8 @@ function check_source_path()
 # Check if the command can be executed based on the version of the actual source
 function check_version_sdk()
 {
-    local SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
+    local SDK_VERSION
+    SDK_VERSION=$(grep "PLATFORM_SDK_VERSION :" build/core/version_defaults.mk | cut -d = -f2 | cut -d ' ' -f2)
 
     if [[ ! $SDK_VERSION -ge $1 ]] ; then
         echo "Android version not compatible with this command"
@@ -208,42 +209,42 @@ function execute_grep()
 
     case $ORIGINAL_COMMAND in
         cg|cgrep)
-            cgrep $TARGET
+            cgrep "$TARGET"
             ;;
         gg|ggrep)
             check_version_sdk 21
-            ggrep $TARGET
+            ggrep "$TARGET"
             ;;
         jg|jgrep)
-            jgrep $TARGET
+            jgrep "$TARGET"
             ;;
         mg|mangrep)
             check_version_sdk 18
-            mangrep $TARGET
+            mangrep "$TARGET"
             ;;
         mg|mgrep)
-            mgrep $TARGET
+            mgrep "$TARGET"
             ;;
         rc|rcgrep)
             check_version_sdk 23
-            rcgrep $TARGET
+            rcgrep "$TARGET"
             ;;
         rg|resgrep)
-            resgrep $TARGET
+            resgrep "$TARGET"
             ;;
         se|sepgrep)
             check_version_sdk 19
-            sepgrep $TARGET
+            sepgrep "$TARGET"
             ;;
         sg|sgrep)
-            sgrep $TARGET
+            sgrep "$TARGET"
     esac
 }
 
 # List board devices as invoked when executing envsetup.sh
 function list_devices()
 {
-    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+    for CHOICE in "${LUNCH_MENU_CHOICES[@]}" ; do
          echo "$CHOICE"
     done
 }
@@ -253,7 +254,7 @@ function list_devices()
 function search_devices()
 {
     if [[ ! -z $1 ]] ; then
-        for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+        for CHOICE in "${LUNCH_MENU_CHOICES[@]}" ; do
             if [[ $CHOICE == *"$1"* ]] ; then
                echo "$CHOICE"
             fi
@@ -271,17 +272,19 @@ function select_duplicate_device()
     PS3="Select your device: "
     local DEVICE_ARRAY=()
 
-    for CHOICE in ${LUNCH_MENU_CHOICES[@]} ; do
+    for CHOICE in "${LUNCH_MENU_CHOICES[@]}" ; do
         if [[ $CHOICE == *"$1"* ]] ; then
            DEVICE_ARRAY+=("$CHOICE")
         fi
     done
 
-    select DEVICE in ${DEVICE_ARRAY[@]} ; do
+    # ShellCheck will see this $DEVICE as unused but it is truly not needed.
+    # shellcheck disable=SC2034
+    select DEVICE in "${DEVICE_ARRAY[@]}" ; do
         if [[ $REPLY -ge 1 && $REPLY -le ${#DEVICE_ARRAY[@]} ]] ; then
             local DEVICE_INDEX=$REPLY-1
             TARGET=${DEVICE_ARRAY[$DEVICE_INDEX]}
-            echo $TARGET > $TEMP_DEVICE_FILE
+            echo "$TARGET" > "$TEMP_DEVICE_FILE"
             build_device
             exit 0
         else
@@ -366,16 +369,20 @@ function show_intro_message()
 # Displays the source basic information (such as version, full path)
 function show_source_info()
 {
-    local ANDROID_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
-    local ANDROID_SDK_VERSION=`cat build/core/version_defaults.mk | grep "PLATFORM_SDK_VERSION :" | cut -d = -f2 | cut -d ' ' -f2`
-    local ANDROID_VERSION_BUILD_ID=`cat build/core/build_id.mk | grep "BUILD_ID=" | cut -d = -f2`
+    local ANDROID_VERSION
+    local ANDROID_SDK_VERSION
+    local ANDROID_VERSION_BUILD_ID
+
+    ANDROID_VERSION=$(grep "PLATFORM_VERSION :" build/core/version_defaults.mk | cut -d = -f2 | cut -d ' ' -f2)
+    ANDROID_SDK_VERSION=$(grep "PLATFORM_SDK_VERSION :" build/core/version_defaults.mk | cut -d = -f2 | cut -d ' ' -f2)
+    ANDROID_VERSION_BUILD_ID=$(grep "BUILD_ID=" build/core/build_id.mk | cut -d = -f2)
 
     echo "Source information:"
     echo ""
     echo "Android Version: $ANDROID_VERSION"
     echo "Android SDK Version: $ANDROID_SDK_VERSION"
     echo "Android Build ID: $ANDROID_VERSION_BUILD_ID"
-    echo "Android Source Full Path: `gettop`"
+    echo "Android Source Full Path: $(gettop)"
 }
 
 # Show the version as defined by "$VERSION"
