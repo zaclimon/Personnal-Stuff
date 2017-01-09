@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Proxy Arp WLAN Enabler (pawe)
+# Simple script to enable proxy arp on a WLAN device
+#
+# Tested on Arch Linux (January 2017)
+#
+# The ARP requests coming from GUEST_IP_ADDRESS will use the MAC address
+# from WLAN_INTERFACE. This way, since the device is within the same network,
+# ARP requests are technically from WLAN_INTERFACE but will be transferred
+# accorgingdly to the right host using the IP address.
+#
+
+WLAN_INTERFACE="wlp6s0"
+GUEST_IP_ADDRESS="192.168.5.100"
+
+arp -i "$WLAN_INTERFACE" -Ds "$GUEST_IP_ADDRESS" "$WLAN_INTERFACE" pub
