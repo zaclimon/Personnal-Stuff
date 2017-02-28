@@ -1,0 +1,13 @@
+Here's a document containing some issues encountered whilst working with ArchLinux.
+
+Last update: January 18th 2017.
+
+1. NetworkManager with OpenConnect
+
+When using NetworkManager with OpenConnect might generate this error:
+SIOCSIFMTU: Opération non permise
+
+This is due to the MTU size of the VPN server being unusual. NetworkManager doesn't seem to have enough
+permissions to fix the said issue. Try the following command and restart the computer after:
+
+setcap cap_net_admin+ep /usr/bin/openconnect

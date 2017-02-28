@@ -1,0 +1,135 @@
+How to configure PCI passthrough for VFIO on ArchLinux
+
+To be used with the following:
+https://wiki.archlinux.org/index.php/PCI_passthrough_via_OVMF
+
+The base VM had 6 vCPU's, 8GB of RAM and was running Windows 10. running QEMU.
+
+
+
+VFIO configuration:
+
+1. Force graphics output to the integrated graphics device in the UEFI.
+
+2. Verify that the kernel frequency timer is set to 1000 HZ (CONFIG_HZ) and that the preemption type is set to Kernel Preemptible Kernel is enabled
+Compile a custom kernel with the necessary if not present:
+
+https://wiki.archlinux.org/index.php/Kernels/Arch_Build_System
+
+3. Append "intel_iommu=on" in the kernel command line (cmdline)
+  Note: Since we're using systemd-boot, we'll need to append it to /boot/loader/entries/"entry".conf
+
+4. Find the GPU in the IOMMU groups using the iommu.sh script
+
+5. Check the vendor-device ID pairs for the GPU and the GPU sound device. Add other devices if there are.
+
+6. Add the pairs to /etc/modprobe.d/vfio.conf (In this case an Nvidia GTX 1060 and a Vantec USB 3.0 USB controller)
+options vfio-pci ids=10de:1c03,10de:10f1,1912:0014
+
+7. Add the required modules to /etc/mkinitcpio.conf
+MODULES="... vfio vfio_iommu_type1 vfio_pci vfio_virqfd ..."
+
+8. Recreate the initramfs (mkinitcpio -p "kernel-name")
+
+9. Check that the PCI devices are bound by the vfio-pci drivers
+
+
+VM initial configuration:
+
+10. Install qemu, libvirt, ovmf and virt-manager according to the wiki. Initially, an AUR version of qemu was used to include the 24s microphone fix
+Link: https://aur.archlinux.org/packages/qemu-saren-git/
+
+11. Create a new vm based on the required needs (Ensure to use VirtIO for the block driver, net driver and balloon driver)
+Note: Use the VirtIO drivers ISO for Windows.
+Note2: If NAT can't start, try to install dnsmasq and firewalld before continuing.
+
+12. Install the machine initially (Without any drivers except for VirtIO)
+
+13. Turn off the VM if turned on and add the following to the VM's config in order bypass Nvidia'a check when installing the GPU drivers:
+
+    <hyperv>
+      <relaxed state='on'/>
+      <vapic state='on'/>
+      <spinlocks state='off'/>
+      <vendor_id state='on' value='123456789ab'/>
+    </hyperv>
+    <kvm>
+      <hidden state='on'/>
+    </kvm>
+
+
+14. The following configuration was also used as far as CPU pinning was used. Modify to your liking:
+
+  <vcpu placement='static'>6</vcpu>
+  <cputune>
+    <vcpupin vcpu='0' cpuset='4'/>
+    <vcpupin vcpu='1' cpuset='5'/>
+    <vcpupin vcpu='2' cpuset='6'/>
+    <vcpupin vcpu='3' cpuset='7'/>
+    <vcpupin vcpu='4' cpuset='2'/>
+    <vcpupin vcpu='5' cpuset='3'/>
+  </cputune>
+
+  <cpu>
+    <topology sockets='1' cores='6' threads='1'/>
+  </cpu>
+
+
+15. Turn on the VM and you should be able to install the GPU drivers.
+
+16. Turn off the VM again. Open /etc/libvirt/qemu.conf and modify the following lines:
+
+user = "isaac"
+group="+1000"
+
+17. Modify the VM configuration to include this as well (Don't forget to add the xmlns):
+
+<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+    <qemu:commandline>
+    <qemu:env name='QEMU_PA_SAMPLES' value='8192'/>
+    <qemu:env name='QEMU_AUDIO_TIMER_PERIOD' value='99'/>
+    <qemu:env name='QEMU_AUDIO_DRV' value='pa'/>
+    <qemu:env name='QEMU_PA_SERVER' value='/run/user/1000/pulse/native'/>
+  </qemu:commandline>
+</domain>
+
+  18. Enable pulseaudio as required by the vm with: systemctl --user enable pulseaudio
+
+  19. Replace the the audio interface on the VM for ICH9 (Default ICH6)
+
+  20. Install net-tools (Required in order to have the "arp" command)
+
+  21. Install xorg-xrandr (for display switching on the go)
+
+  22. Create a virtual network required for wireless bridging (by proxy arp) via the following link:
+  http://unix.stackexchange.com/questions/159191/setup-kvm-on-a-wireless-interface-on-a-laptop-machine
+  Note: The address of the subnet in order to avoid conflicts at the beginning was 192.168.5.96/29.
+
+  23. Create a new VirtIO NIC pointing to the virtual address. The DHCP of that address will assign it a
+  new address but at first it was 192.168.10.100.
+
+  24. Install Synergy on both the host and the guest. A nightly stable build for Windows was used at first and can be installed with the following link:
+  https://symless.com/nightly
+
+  25. Add exceptions to firewall on both the host and the guest for Synergy.
+
+  27. Copy "synergy.conf" to /etc/synergy.conf
+
+  28. Clone the Personnal-Stuff repo from Github to ~/.PersonnalStuff (https://github.com/zaclimon/Personnal-Stuff)
+
+  29. Copy the "qemu" script to /etc/libvirt/hooks (Create the directory if necessary)
+
+  30. Restart libvirtd
+
+  31. Install gnome-panel in order to create desktop shortcuts
+
+  32. Search a Windows related SVG (For the desktop launcher icon. Preferably a post Windows 8 one)
+
+  32. Execute the following command. Adjust for the desktop path on the device:
+  gnome-desktop-item-edit --create-new ~/Bureau
+
+  33. Adjust the launcher based on the following:
+  Type: Terminal application
+  Name: Win10
+  Command: sudo virsh start Win10 (Adjust to the VM name)
+  Icon: The icon searched previously

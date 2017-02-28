@@ -1,0 +1,4 @@
+#!/bin/bash
+#
+# Start Win10 preparation script
+/home/isaac/.PersonnalStuff/scripts/Win10Hook.sh $1 $2
