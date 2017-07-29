@@ -19,7 +19,7 @@ CURRENT_MACHINE="$1"
 LIBVIRT_COMMAND="$2"
 VM_IP_ADDRESS="192.168.5.100"
 WLAN_INTERFACE="wlp6s0"
-PROXY_ARP_STATUS=$(arp -e | grep "Isaac-VM.localdomain" | grep -c "$WIFI_INTERFACE")
+PROXY_ARP_STATUS=$(arp -e | grep "Isaac-VM.localdomain" | grep -c "$WLAN_INTERFACE")
 
 # Variables for PCI-E devices
 USB_CONTROLLER_PCI_ID="0000:02:00.0"
