@@ -73,38 +73,49 @@ Note3: If NAT can't start, try to install dnsmasq and firewalld before continuin
 
 16. Remove the the default audio interface on the VM
 
-17. Install net-tools (Required in order to have the "arp" command)
+17. Install xorg-xrandr (for display switching on the go)
 
-18. Install xorg-xrandr (for display switching on the go)
+
+# Wi-Fi bridged configuration for the virtual machine (Go to 21 if the connection is wired)
+
+18. Install net-tools (Required in order to have the "arp" command)
 
 19. Create a virtual network required for wireless bridging (by proxy arp) via the following link:
 http://unix.stackexchange.com/questions/159191/setup-kvm-on-a-wireless-interface-on-a-laptop-machine
 Note: The address of the subnet in order to avoid conflicts at the beginning was 192.168.5.96/29.
 
-20. Create a new VirtIO NIC pointing to the virtual address. The DHCP of that address will assign it a
-new address but at first it was 192.168.10.100.
+20. Create a new VirtIO NIC pointing to the virtual address. The DHCP of that address will assign it a new address but at first it was 192.168.10.100.
 
-21. Install Synergy on both the host and the guest. A nightly stable build for Windows was used at first and can be installed with the following link:
+
+# Wired (Ethernet) bridged configuration for the virtual machine
+
+21. Go to NetworkManager and make it forget the connection
+
+22. Create a new bridge by linking the required Ethernet device on the host. (You might need to use nm-connection-editor if you can't create a bridge from NetworkManager's own interface)
+
+23. In virt-manager, replace the specified interface and point it to the newly created bridge interface name. (For example bridge0 for the "bridge0" bridge)
+
+24. Install Synergy on both the host and the guest. A nightly stable build for Windows was used at first and can be installed with the following link:
 https://symless.com/nightly
 
-22. Add exceptions to firewall on both the host and the guest for Synergy.
+25. Add exceptions to firewall on both the host and the guest for Synergy.
 
-23. Copy "synergy.conf" to /etc/synergy.conf
+26. Copy "synergy.conf" to /etc/synergy.conf
 
-24. Clone the Personnal-Stuff repo from Github to ~/.PersonnalStuff (https://github.com/zaclimon/Personnal-Stuff)
+27. Clone the Personnal-Stuff repo from Github to ~/.PersonnalStuff (https://github.com/zaclimon/Personnal-Stuff)
 
-25. Copy the "qemu" script to /etc/libvirt/hooks (Create the directory if necessary)
+28. Copy the "qemu" script to /etc/libvirt/hooks (Create the directory if necessary)
 
-26. Restart libvirtd
+29. Restart libvirtd
 
-27. Install gnome-panel in order to create desktop shortcuts
+30. Install gnome-panel in order to create desktop shortcuts
 
-28. Search a Windows related SVG (For the desktop launcher icon. Preferably a post Windows 8 one)
+31. Search a Windows related SVG (For the desktop launcher icon. Preferably a post Windows 8 one)
 
-29. Execute the following command. Adjust for the desktop path on the device:
+32. Execute the following command. Adjust for the desktop path on the device:
 gnome-desktop-item-edit --create-new ~/Bureau
 
-30. Adjust the launcher based on the following:
+33. Adjust the launcher based on the following:
 Type: Terminal application
 Name: Win10
 Command: sudo virsh start Win10 (Adjust to the VM name)

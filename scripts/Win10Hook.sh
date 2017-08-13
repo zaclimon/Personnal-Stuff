@@ -20,6 +20,7 @@ LIBVIRT_COMMAND="$2"
 VM_IP_ADDRESS="192.168.5.100"
 WLAN_INTERFACE="wlp6s0"
 PROXY_ARP_STATUS=$(arp -e | grep "Isaac-VM.localdomain" | grep -c "$WLAN_INTERFACE")
+IS_WLAN_PRESENT=$(ip addr | grep -c "$WLAN_INTERFACE")
 
 # Variables for PCI-E devices
 USB_CONTROLLER_PCI_ID="0000:02:00.0"
@@ -37,8 +38,8 @@ export XAUTHORITY=/home/isaac/.Xauthority
 if [ "$CURRENT_MACHINE" = "$VM_NAME" ] ; then
     if [ "$LIBVIRT_COMMAND" = "started" ] ; then
 
-        # Enable Proxy arp if not already
-        if [ $PROXY_ARP_STATUS -eq 0 ] ; then
+        # Enable Proxy arp
+        if [[ $IS_WLAN_PRESENT -eq 1 && $PROXY_ARP_STATUS -eq 0 ]] ; then
             arp -i "$WLAN_INTERFACE" -Ds "$VM_IP_ADDRESS" "$WLAN_INTERFACE" pub
         fi
 
