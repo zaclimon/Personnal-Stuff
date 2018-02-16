@@ -21,6 +21,7 @@ VM_IP_ADDRESS="192.168.5.100"
 WLAN_INTERFACE="wlp6s0"
 PROXY_ARP_STATUS=$(arp -e | grep "Isaac-VM.localdomain" | grep -c "$WLAN_INTERFACE")
 IS_WLAN_PRESENT=$(ip addr | grep -c "$WLAN_INTERFACE")
+CPU_CORES=$(cat /proc/cpuinfo | grep -c "processor")
 
 # Variables for PCI-E devices
 USB_CONTROLLER_PCI_ID="0000:02:00.0"
@@ -63,6 +64,11 @@ if [ "$CURRENT_MACHINE" = "$VM_NAME" ] ; then
 
         fi
 
+        # Change the CPU governors to performance
+        for ((i = 0; i < $CPU_CORES; i++)) ; do
+            echo "performance" > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
+        done
+
         # Start the Synergy server and change the default display to the secondary one.
         synergys
         xrandr --output VGA-1 --auto --output HDMI-1 --off
@@ -79,6 +85,11 @@ if [ "$CURRENT_MACHINE" = "$VM_NAME" ] ; then
             echo "$ONBOARD_AUDIO_PCI_ID" > /sys/bus/pci/drivers/vfio-pci/unbind
             echo "$ONBOARD_AUDIO_PCI_ID" > /sys/bus/pci/drivers/snd_hda_intel/bind
         fi
+
+        # Change the CPU governors to powersave
+        for ((i = 0; i < $CPU_CORES; i++)) ; do
+            echo "powersave" > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
+        done
 
         # Stop Synergy and restore display status
         pkill synergy
