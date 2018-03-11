@@ -9,26 +9,24 @@ This VM configuration has 4 vCPU's, 8GB of RAM and was running Windows 10 on run
 1. Force graphics output to the integrated graphics device in the UEFI.
 
 2. Append "intel_iommu=on" in the kernel command line (cmdline)
-Note: Since we're using systemd-boot, we'll need to append it to /boot/loader/entries/arch.conf
+   Note: Since we're using systemd-boot, we'll need to append it to /boot/loader/entries/arch.conf
 
-3. Find the GPU in the IOMMU groups using the iommu.sh script
-Link: https://wiki.archlinux.org/index.php/PCI_passthrough_via_OVMF#Ensuring_that_the_groups_are_valid
+3. Find the GPU in the IOMMU groups using the iommu.sh [script](https://wiki.archlinux.org/index.php/PCI_passthrough_via_OVMF#Ensuring_that_the_groups_are_valid)
 
 4. Check the vendor-device ID pairs for the GPU and the GPU sound device. Add other devices if necessary.
 
 5. Add the pairs to /etc/modprobe.d/vfio.conf (In this case an Nvidia GTX 1060)
-options vfio-pci ids=10de:1c03,10de:10f1
+   options vfio-pci ids=10de:1c03,10de:10f1
 
 6. Add the required modules to /etc/mkinitcpio.conf
 
-    ```
-    MODULES="... vfio vfio_iommu_type1 vfio_pci vfio_virqfd ..."
-    ```
+   ```conf
+   MODULES="... vfio vfio_iommu_type1 vfio_pci vfio_virqfd ..."
+   ```
 
 7. Recreate the initramfs (mkinitcpio -p linux)
 
 8. Check that the PCI devices are bound by the vfio-pci drivers
-
 
 ## VM initial configuration
 
@@ -36,19 +34,19 @@ options vfio-pci ids=10de:1c03,10de:10f1
 
 10. Add the OVMF UEFI configuration for Libvirt (`/etc/libvirt/qemu.conf`)
 
-```
+```conf
     nvram = [
-	"/usr/share/ovmf/x64/OVMF_CODE.fd:/usr/share/ovmf/x64/OVMF_VARS.fd"
+  "/usr/share/ovmf/x64/OVMF_CODE.fd:/usr/share/ovmf/x64/OVMF_VARS.fd"
     ]
 ```
 
-11. Create a new VM based on the required needs. 
-    - 4 vCPU's
-    - 8 GB of RAM
-    - One drive containing Windows 10
-    - One drive containing [VirtIO drivers](https://fedoraproject.org/wiki/Windows_Virtio_Drivers) for Windows
-    - Usage of UEFI instead of BIOS
-    - Q35 chipset
+11. Create a new VM based on the required needs.
+    * 4 vCPU's
+    * 8 GB of RAM
+    * One drive containing Windows 10
+    * One drive containing [VirtIO drivers](https://fedoraproject.org/wiki/Windows_Virtio_Drivers) for Windows
+    * Usage of UEFI instead of BIOS
+    * Q35 chipset
 
 **Note**: For better performance, use another parition/storage device for the VM disk(s)
 
@@ -59,6 +57,7 @@ options vfio-pci ids=10de:1c03,10de:10f1
 13. Install the machine initially (Without any drivers except for VirtIO)
 
 14. Turn off the VM if turned on and adjust the following to the VM's config in order bypass Nvidia'a check when installing the GPU drivers.
+
 ```
     <hyperv>
       <vendor_id state='on' value='123456789ab'/>
@@ -71,17 +70,18 @@ options vfio-pci ids=10de:1c03,10de:10f1
 15. The following configuration was also used as far as CPU pinning was used. Modify to your liking:
 
 ```
-  <vcpu placement='static'>4</vcpu>
   <cputune>
-    <vcpupin vcpu='0' cpuset='4'/>
-    <vcpupin vcpu='1' cpuset='5'/>
-    <vcpupin vcpu='2' cpuset='6'/>
+    <vcpupin vcpu='0' cpuset='2'/>
+    <vcpupin vcpu='1' cpuset='6'/>
+    <vcpupin vcpu='2' cpuset='3'/>
     <vcpupin vcpu='3' cpuset='7'/>
-  </cputune>
-
-  <cpu mode='custom' match='exact'>
-    <topology sockets='1' cores='4' threads='1'/>
-  </cpu>
+</cputune>
+...
+<cpu mode='custom' match='exact'>
+    ...
+    <topology sockets='1' cores='2' threads='2'/>
+    ...
+</cpu>
 ```
 
 16. Turn on the VM and you should be able to install the GPU drivers.
@@ -89,7 +89,6 @@ options vfio-pci ids=10de:1c03,10de:10f1
 17. Remove the the default audio interface on the VM
 
 18. Install xorg-xrandr (for display switching on the go)
-
 
 ## Wi-Fi bridged configuration for the virtual machine (Go to 21 if the connection is wired)
 
@@ -101,7 +100,6 @@ options vfio-pci ids=10de:1c03,10de:10f1
 
 21. Create a new VirtIO NIC pointing to the virtual address. The DHCP of that address will assign it a new address but at first it was 192.168.10.100.
 
-
 ## Wired (Ethernet) bridged configuration for the virtual machine
 
 22. Go to NetworkManager and make it forget the connection
@@ -112,13 +110,13 @@ options vfio-pci ids=10de:1c03,10de:10f1
 
 25. Install Synergy (Version 1.8) on both the host and the guest.
 
-26. Change the VM's name to "Isaac-VM" (For Synergy) 
+26. Change the VM's name to "Isaac-VM" (For Synergy)
 
 27. Add exceptions to firewall on both the host and the guest for Synergy.
 
 28. Copy `synergy.conf` to `/etc/synergy.conf`
 
-29. Clone the "Personnal-Stuff" repo from [Github]((https://github.com/zaclimon/Personnal-Stuff)) to ~/.PersonnalStuff 
+29. Clone the "Personnal-Stuff" repo from [Github](<(https://github.com/zaclimon/Personnal-Stuff)>) to ~/.PersonnalStuff
 
 30. Copy the "qemu" script to /etc/libvirt/hooks (Create the directory if necessary)
 
@@ -128,18 +126,18 @@ options vfio-pci ids=10de:1c03,10de:10f1
 
 32. Search a Windows related SVG (For the desktop launcher icon. Preferably a post Windows 8 one)
 
-## Launcher creation on Gnome 
+## Launcher creation on Gnome
 
 33. Install gnome-panel in order to create desktop shortcuts
 
 34. Execute the following command. Adjust for the desktop path on the device:
-gnome-desktop-item-edit --create-new ~/Bureau
+    gnome-desktop-item-edit --create-new ~/Bureau
 
 35. Adjust the launcher based on the following:
-Type: Terminal application
-Name: Win10
-Command: sudo virsh start Win10 (Adjust to the VM name)
-Icon: The icon searched previously
+    Type: Terminal application
+    Name: Win10
+    Command: sudo virsh start Win10 (Adjust to the VM name)
+    Icon: The icon searched previously
 
 ## Launcher creation on Cinnamon
 
