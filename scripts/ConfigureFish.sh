@@ -27,11 +27,13 @@ cp NotoMonoForPowerline.ttf $HOME/.local/share/fonts
 fc-cache -f $HOME/.local/share/fonts
 
 # Set the theme's config
+mkdir -p $HOME/.config/fish/functions
 cp config.fish $HOME/.config/fish/
 cp fish_greeting.fish $HOME/.config/fish/functions
 
 # Download/configure fish-symnav
 git clone https://github.com/externl/fish-symnav
+mkdir -p $HOME/.config/fish/conf.d
 cp fish-symnav/functions/* $HOME/.config/fish/functions
 cp fish-symnav/conf.d/* $HOME/.config/fish/conf.d
 
