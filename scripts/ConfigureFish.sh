@@ -12,10 +12,12 @@ FISH_CONFIG_FILE=$HOME/.config/fish/config.fish
 cd fish
 
 # Install oh-my-fish
-curl -L https://get.oh-my.fish | fish
+curl -L https://get.oh-my.fish > install
+chmod 0755 install
+fish -c "./install --noninteractive"
 
 # Install bobthefish theme
-fish -c omf install bobthefish
+fish -c "omf install bobthefish"
 
 # Configure bobthefish
 # Install/Configure noto-mono for Powerline (Ensure that noto-mono is the font used for the terminal)
